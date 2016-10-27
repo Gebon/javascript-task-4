@@ -4,6 +4,13 @@ function toArray(arrayLikeObject) {
     return [].slice.apply(arrayLikeObject);
 }
 
+function deepCopy(arrayLikeObject) {
+    return [].slice.apply(arrayLikeObject)
+        .map(function (entry) {
+            return Object.assign({}, entry);
+        });
+}
+
 function assignRankToFunction(func, rank) {
     func.rank = rank;
 
@@ -36,14 +43,13 @@ exports.isStar = true;
  */
 exports.query = function () {
     var args = toArray(arguments);
-    var collection = toArray(args[0]);
-    args.slice(1)
-        .sort(function (a, b) {
-            return a.rank - b.rank;
-        })
-        .forEach(function (queryFunc) {
-            collection = queryFunc(collection);
-        });
+    var collection = deepCopy(toArray(args.shift()));
+    args.sort(function (a, b) {
+        return a.rank - b.rank;
+    })
+    .forEach(function (queryFunc) {
+        collection = queryFunc(collection);
+    });
 
     return collection;
 };
