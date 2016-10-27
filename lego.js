@@ -73,7 +73,7 @@ exports.select = function () {
 
             return result;
         });
-    }, 2);
+    }, 4);
 };
 
 /**
@@ -119,7 +119,7 @@ exports.format = function (field, formatter) {
 
             return copy;
         });
-    }, 4);
+    }, 3);
 };
 
 /**
@@ -130,7 +130,7 @@ exports.format = function (field, formatter) {
 exports.limit = function (count) {
     return assignRankToFunction(function (collection) {
         return collection.slice(0, count);
-    }, 3);
+    }, 2);
 };
 
 if (exports.isStar) {
