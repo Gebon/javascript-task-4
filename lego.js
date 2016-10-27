@@ -98,7 +98,7 @@ exports.filterIn = function (field, values) {
 exports.sortBy = function (field, order) {
     return assignRankToFunction(function (collection) {
         return toArray(collection).sort(function (a, b) {
-            return (a[field] - b[field]) * (order === 'asc' ? 1 : -1);
+            return (a[field] > b[field] ? 1 : -1) * (order === 'asc' ? 1 : -1);
         });
     }, 1);
 };
