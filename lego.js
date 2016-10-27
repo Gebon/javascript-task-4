@@ -36,8 +36,8 @@ exports.isStar = true;
  */
 exports.query = function () {
     var args = toArray(arguments);
-    var collection = args[0];
-    args = args.slice(1)
+    var collection = toArray(args[0]);
+    args.slice(1)
         .sort(function (a, b) {
             return a.rank - b.rank;
         })
@@ -60,7 +60,9 @@ exports.select = function () {
         return collection.map(function (entry) {
             var result = {};
             fields.forEach(function (field) {
-                result[field] = entry[field];
+                if (entry.hasOwnProperty(field)) {
+                    result[field] = entry[field];
+                }
             });
 
             return result;
@@ -70,44 +72,44 @@ exports.select = function () {
 
 /**
  * Фильтрация поля по массиву значений
- * @param {String} property – Свойство для фильтрации
+ * @param {String} field – Свойство для фильтрации
  * @param {Array} values – Доступные значения
  * @returns {Function}
  */
-exports.filterIn = function (property, values) {
+exports.filterIn = function (field, values) {
     return assignRankToFunction(function (collection) {
         return collection.filter(function (entry) {
-            return values.indexOf(entry[property]) !== -1;
+            return values.indexOf(entry[field]) !== -1;
         });
     }, 0);
 };
 
 /**
  * Сортировка коллекции по полю
- * @param {String} property – Свойство для фильтрации
+ * @param {String} field – Свойство для фильтрации
  * @param {String} order – Порядок сортировки (asc - по возрастанию; desc – по убыванию)
  * @returns {Function}
  */
-exports.sortBy = function (property, order) {
+exports.sortBy = function (field, order) {
     return assignRankToFunction(function (collection) {
         return toArray(collection).sort(function (a, b) {
-            return (a[property] - b[property]) * (order === 'asc' ? 1 : -1);
+            return (a[field] - b[field]) * (order === 'asc' ? 1 : -1);
         });
     }, 1);
 };
 
 /**
  * Форматирование поля
- * @param {String} property – Свойство для фильтрации
+ * @param {String} field – Свойство для фильтрации
  * @param {Function} formatter – Функция для форматирования
  * @returns {Array}
  */
-exports.format = function (property, formatter) {
+exports.format = function (field, formatter) {
     return assignRankToFunction(function (collection) {
         return collection.map(function (entry) {
             var copy = {};
             Object.assign(copy, entry);
-            copy[property] = formatter(copy[property]);
+            copy[field] = formatter(copy[field]);
 
             return copy;
         });
