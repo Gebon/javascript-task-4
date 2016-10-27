@@ -5,10 +5,9 @@ function toArray(arrayLikeObject) {
 }
 
 function deepCopy(arrayLikeObject) {
-    return [].slice.apply(arrayLikeObject)
-        .map(function (entry) {
-            return Object.assign({}, entry);
-        });
+    return arrayLikeObject.map(function (entry) {
+        return Object.assign({}, entry);
+    });
 }
 
 function assignRankToFunction(func, rank) {
@@ -17,17 +16,17 @@ function assignRankToFunction(func, rank) {
     return func;
 }
 
-function getDistinctValues(collection) {
-    var uniqueKeys = {};
-    collection.forEach(function (entry) {
-        uniqueKeys[JSON.stringify(entry)] = true;
-    });
+// function getDistinctValues(collection) {
+//     var uniqueKeys = {};
+//     collection.forEach(function (entry) {
+//         uniqueKeys[JSON.stringify(entry)] = true;
+//     });
 
-    return Object.keys(uniqueKeys)
-        .map(function (jsonEntry) {
-            return JSON.parse(jsonEntry);
-        });
-}
+//     return Object.keys(uniqueKeys)
+//         .map(function (jsonEntry) {
+//             return JSON.parse(jsonEntry);
+//         });
+// }
 
 /**
  * Сделано задание на звездочку
@@ -43,7 +42,7 @@ exports.isStar = true;
  */
 exports.query = function () {
     var args = toArray(arguments);
-    var collection = deepCopy(toArray(args.shift()));
+    var collection = deepCopy(args.shift());
     args.sort(function (a, b) {
         return a.rank - b.rank;
     })
@@ -113,8 +112,7 @@ exports.sortBy = function (field, order) {
 exports.format = function (field, formatter) {
     return assignRankToFunction(function (collection) {
         return collection.map(function (entry) {
-            var copy = {};
-            Object.assign(copy, entry);
+            var copy = Object.assign({}, entry);
             copy[field] = formatter(copy[field]);
 
             return copy;
@@ -145,12 +143,11 @@ if (exports.isStar) {
         var args = toArray(arguments);
 
         return assignRankToFunction(function (collection) {
-            var result = [];
-            args.forEach(function (filterInFunc) {
-                result = result.concat(filterInFunc(collection));
+            return collection.filter(function (entry) {
+                return args.some(function (filterInFunc) {
+                    return filterInFunc(collection).indexOf(entry) !== -1;
+                });
             });
-
-            return getDistinctValues(result);
         }, -1);
     };
 
@@ -164,12 +161,11 @@ if (exports.isStar) {
         var args = toArray(arguments);
 
         return assignRankToFunction(function (collection) {
-            var result = toArray(collection);
-            args.forEach(function (filterInFunc) {
-                result = filterInFunc(result);
+            return collection.filter(function (entry) {
+                return args.every(function (filterInFunc) {
+                    return filterInFunc(collection).indexOf(entry) !== -1;
+                });
             });
-
-            return result;
         }, -2);
     };
 }
