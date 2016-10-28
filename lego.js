@@ -16,18 +16,6 @@ function assignRankToFunction(func, rank) {
     return func;
 }
 
-// function getDistinctValues(collection) {
-//     var uniqueKeys = {};
-//     collection.forEach(function (entry) {
-//         uniqueKeys[JSON.stringify(entry)] = true;
-//     });
-
-//     return Object.keys(uniqueKeys)
-//         .map(function (jsonEntry) {
-//             return JSON.parse(jsonEntry);
-//         });
-// }
-
 /**
  * Сделано задание на звездочку
  * Реализованы методы or и and
@@ -140,11 +128,11 @@ if (exports.isStar) {
      * @returns {Array}
      */
     exports.or = function () {
-        var args = toArray(arguments);
+        var filterInFuncs = toArray(arguments);
 
         return assignRankToFunction(function (collection) {
             return collection.filter(function (entry) {
-                return args.some(function (filterInFunc) {
+                return filterInFuncs.some(function (filterInFunc) {
                     return filterInFunc(collection).indexOf(entry) !== -1;
                 });
             });
@@ -158,11 +146,11 @@ if (exports.isStar) {
      * @returns {Array}
      */
     exports.and = function () {
-        var args = toArray(arguments);
+        var filterInFuncs = toArray(arguments);
 
         return assignRankToFunction(function (collection) {
             return collection.filter(function (entry) {
-                return args.every(function (filterInFunc) {
+                return filterInFuncs.every(function (filterInFunc) {
                     return filterInFunc(collection).indexOf(entry) !== -1;
                 });
             });
