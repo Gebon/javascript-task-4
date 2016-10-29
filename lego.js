@@ -1,5 +1,7 @@
 'use strict';
 
+var FUNCTION_PRIORITY = ['and', 'or', 'filterIn', 'sortBy', 'limit', 'format', 'select'];
+
 function toArray(arrayLikeObject) {
     return [].slice.apply(arrayLikeObject);
 }
@@ -10,10 +12,8 @@ function deepCopy(arrayLikeObject) {
     });
 }
 
-function assignRankToFunction(func, rank) {
-    func.rank = rank;
-
-    return func;
+function getFunctionPriority(func) {
+    return FUNCTION_PRIORITY.indexOf(func.name);
 }
 
 /**
@@ -32,7 +32,7 @@ exports.query = function () {
     var args = toArray(arguments);
     var collection = deepCopy(args.shift());
     args.sort(function (a, b) {
-        return a.rank - b.rank;
+        return getFunctionPriority(a) - getFunctionPriority(b);
     })
     .forEach(function (queryFunc) {
         collection = queryFunc(collection);
@@ -49,7 +49,7 @@ exports.query = function () {
 exports.select = function () {
     var fields = toArray(arguments);
 
-    return assignRankToFunction(function (collection) {
+    return function select(collection) {
         return collection.map(function (entry) {
             var result = {};
             fields.forEach(function (field) {
@@ -60,7 +60,7 @@ exports.select = function () {
 
             return result;
         });
-    }, 4);
+    };
 };
 
 /**
@@ -70,11 +70,11 @@ exports.select = function () {
  * @returns {Function}
  */
 exports.filterIn = function (field, values) {
-    return assignRankToFunction(function (collection) {
+    return function filterIn(collection) {
         return collection.filter(function (entry) {
             return values.indexOf(entry[field]) !== -1;
         });
-    }, 0);
+    };
 };
 
 /**
@@ -84,11 +84,11 @@ exports.filterIn = function (field, values) {
  * @returns {Function}
  */
 exports.sortBy = function (field, order) {
-    return assignRankToFunction(function (collection) {
+    return function sortBy(collection) {
         return toArray(collection).sort(function (a, b) {
             return (a[field] > b[field] ? 1 : -1) * (order === 'asc' ? 1 : -1);
         });
-    }, 1);
+    };
 };
 
 /**
@@ -98,14 +98,14 @@ exports.sortBy = function (field, order) {
  * @returns {Array}
  */
 exports.format = function (field, formatter) {
-    return assignRankToFunction(function (collection) {
+    return function format(collection) {
         return collection.map(function (entry) {
             var copy = Object.assign({}, entry);
             copy[field] = formatter(copy[field]);
 
             return copy;
         });
-    }, 3);
+    };
 };
 
 /**
@@ -114,9 +114,9 @@ exports.format = function (field, formatter) {
  * @returns {Array}
  */
 exports.limit = function (count) {
-    return assignRankToFunction(function (collection) {
+    return function limit(collection) {
         return collection.slice(0, count);
-    }, 2);
+    };
 };
 
 if (exports.isStar) {
@@ -130,13 +130,13 @@ if (exports.isStar) {
     exports.or = function () {
         var filterInFuncs = toArray(arguments);
 
-        return assignRankToFunction(function (collection) {
+        return function or(collection) {
             return collection.filter(function (entry) {
                 return filterInFuncs.some(function (filterInFunc) {
                     return filterInFunc(collection).indexOf(entry) !== -1;
                 });
             });
-        }, -1);
+        };
     };
 
     /**
@@ -148,12 +148,12 @@ if (exports.isStar) {
     exports.and = function () {
         var filterInFuncs = toArray(arguments);
 
-        return assignRankToFunction(function (collection) {
+        return function and(collection) {
             return collection.filter(function (entry) {
                 return filterInFuncs.every(function (filterInFunc) {
                     return filterInFunc(collection).indexOf(entry) !== -1;
                 });
             });
-        }, -2);
+        };
     };
 }
