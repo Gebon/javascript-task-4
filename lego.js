@@ -1,19 +1,27 @@
 'use strict';
 
-var FUNCTION_PRIORITY = ['and', 'or', 'filterIn', 'sortBy', 'limit', 'format', 'select'];
+function objectAssign(target, source) {
+    Object.keys(source).forEach(function (property) {
+        target[property] = source[property];
+    });
+
+    return target;
+}
+
+var FUNC_PRIORITY = ['and', 'or', 'filterIn', 'sortBy', 'limit', 'format', 'select'];
 
 function toArray(arrayLikeObject) {
     return [].slice.apply(arrayLikeObject);
 }
 
-function deepCopy(arrayLikeObject) {
+function clone(arrayLikeObject) {
     return arrayLikeObject.map(function (entry) {
-        return Object.assign({}, entry);
+        return objectAssign({}, entry);
     });
 }
 
-function getFunctionPriority(func) {
-    return FUNCTION_PRIORITY.indexOf(func.name);
+function getFuncPriority(func) {
+    return FUNC_PRIORITY.indexOf(func.name);
 }
 
 /**
@@ -30,15 +38,14 @@ exports.isStar = true;
  */
 exports.query = function () {
     var args = toArray(arguments);
-    var collection = deepCopy(args.shift());
-    args.sort(function (a, b) {
-        return getFunctionPriority(a) - getFunctionPriority(b);
-    })
-    .forEach(function (queryFunc) {
-        collection = queryFunc(collection);
-    });
+    var collection = clone(args.shift());
 
-    return collection;
+    return args.sort(function (a, b) {
+        return getFuncPriority(a) - getFuncPriority(b);
+    })
+    .reduce(function (acc, queryFunc) {
+        return queryFunc(acc);
+    }, collection);
 };
 
 /**
@@ -47,61 +54,60 @@ exports.query = function () {
  * @returns {Function}
  */
 exports.select = function () {
-    var fields = toArray(arguments);
+    var properties = toArray(arguments);
 
     return function select(collection) {
         return collection.map(function (entry) {
-            var result = {};
-            fields.forEach(function (field) {
-                if (entry.hasOwnProperty(field)) {
-                    result[field] = entry[field];
+            return properties.reduce(function (result, property) {
+                if (entry.hasOwnProperty(property)) {
+                    result[property] = entry[property];
                 }
-            });
 
-            return result;
+                return result;
+            }, {});
         });
     };
 };
 
 /**
  * Фильтрация поля по массиву значений
- * @param {String} field – Свойство для фильтрации
+ * @param {String} property – Свойство для фильтрации
  * @param {Array} values – Доступные значения
  * @returns {Function}
  */
-exports.filterIn = function (field, values) {
+exports.filterIn = function (property, values) {
     return function filterIn(collection) {
         return collection.filter(function (entry) {
-            return values.indexOf(entry[field]) !== -1;
+            return values.indexOf(entry[property]) !== -1;
         });
     };
 };
 
 /**
  * Сортировка коллекции по полю
- * @param {String} field – Свойство для фильтрации
+ * @param {String} property – Свойство для фильтрации
  * @param {String} order – Порядок сортировки (asc - по возрастанию; desc – по убыванию)
  * @returns {Function}
  */
-exports.sortBy = function (field, order) {
+exports.sortBy = function (property, order) {
     return function sortBy(collection) {
         return toArray(collection).sort(function (a, b) {
-            return (a[field] > b[field] ? 1 : -1) * (order === 'asc' ? 1 : -1);
+            return (a[property] > b[property] ? 1 : -1) * (order === 'asc' ? 1 : -1);
         });
     };
 };
 
 /**
  * Форматирование поля
- * @param {String} field – Свойство для фильтрации
+ * @param {String} property – Свойство для фильтрации
  * @param {Function} formatter – Функция для форматирования
  * @returns {Array}
  */
-exports.format = function (field, formatter) {
+exports.format = function (property, formatter) {
     return function format(collection) {
         return collection.map(function (entry) {
-            var copy = Object.assign({}, entry);
-            copy[field] = formatter(copy[field]);
+            var copy = objectAssign({}, entry);
+            copy[property] = formatter(copy[property]);
 
             return copy;
         });
